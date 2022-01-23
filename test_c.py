@@ -94,5 +94,3 @@ while True:
     get_filenames()
     get_solution('python.jpg')
     break
-
-

@@ -56,7 +56,7 @@ def send_solution(client, data):
     print(fileName)
     name, ext = os.path.splitext(fileName)
 
-    if not ext in NORMAL_FILE_EXTENSIONS:
+    if ext not in NORMAL_FILE_EXTENSIONS:
         send_data(client, ABNORMAL_FILE_EXTENSION, {'Error': "FILE EXTENSION IS NOT VALID"})
         return
     if chunks > 25:
