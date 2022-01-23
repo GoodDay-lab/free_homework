@@ -24,6 +24,7 @@ def parse_response(response):
 
 
 def send_solution(fileName):
+    """ fileName probably may be a path """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(SERVER_ADDRESS)
     if not os.path.exists(fileName):
@@ -50,6 +51,7 @@ def send_solution(fileName):
 
 
 def get_solution(fileName):
+    """ fileName is a name of file on server, you can use func get_filenames() to get them """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(SERVER_ADDRESS)
     request = {
@@ -71,12 +73,13 @@ def get_solution(fileName):
             file.write(sock.recv(chunkSize))
 
 
-def get_filenames(extenstion="*"):
+def get_filenames(extension="*"):
+    """ Default extension is '*' that means you'll get a list of all files """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(SERVER_ADDRESS)
     request = {
         "action": "get_filenames",
-        "payload": extenstion
+        "payload": extension
     }
     sock.send(json.dumps(request).encode())
     raw_response = json.loads(sock.recv(RESPONSE_SIZE))

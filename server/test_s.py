@@ -130,34 +130,45 @@ def main(host, tcp_port):
     tasks_manager = coroutine()
     next(tasks_manager)
     tcp_listener = TcpListener(host, tcp_port, tasks_manager, threads_cleaner)
-    tcp_listener.run()
+    tcp_listener.start()
 
     is_running = True
     while is_running:
-        input('admin@admin $ ')
+        cmd = input('admin@admin $ ')
+        if cmd == 'quit':
+            print('wait', end='')
+            tcp_listener.stop()
+            print('.', end='')
+            time.sleep(0.2)
+            is_running = False
+            print('.', end='')
+            time.sleep(0.2)
+    tcp_listener.join()
+    print('.', end='')
 
 
 class TcpListener(threading.Thread):
     def __init__(self, host, port, tasks_query, cleaner):
-        super().__init__()
+        threading.Thread.__init__(self)
         self.host = host
         self.port = port
         self.is_running = True
         self.tasks_query = tasks_query
         self.cleaner = cleaner
+        self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def run(self):
-        serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        serv_sock.settimeout(1)
-        serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        serv_sock.setblocking(True)
-        serv_sock.bind((self.host, self.port))
-        serv_sock.listen(5)
+        self.serv_sock.settimeout(1)
+        self.serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.serv_sock.setblocking(True)
+        self.serv_sock.settimeout(1)
+        self.serv_sock.bind((self.host, self.port))
+        self.serv_sock.listen(5)
 
         while self.is_running:
             next(self.cleaner)
             try:
-                client, addr = serv_sock.accept()
+                client, addr = self.serv_sock.accept()
             except socket.timeout:
                 continue
 
@@ -167,6 +178,10 @@ class TcpListener(threading.Thread):
                 self.tasks_query.send((client, data))
             except (json.decoder.JSONDecodeError, ConnectionResetError):
                 print('Someone closed connection')
+        self.serv_sock.close()
+
+    def stop(self):
+        self.is_running = False
 
 
 if __name__ == '__main__':
