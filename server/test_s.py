@@ -8,15 +8,17 @@ HOST = '0.0.0.0'
 PORT = 5555
 QUERY = []
 THREADS = [] * 10
-BYTE_READ = 2048
+
+CHUNK_SIZE = 2048
 
 # STATUSES
 OK = 200
 FILE_NOT_FOUND = 401
 ABNORMAL_FILE_EXTENSION = 402
+ABNORMAL_FILE_SIZE = 403
 
 # EXTENSIONS
-NORMAL_FILE_EXTENSIONS = ['.txt', '.py', '.pdf']
+NORMAL_FILE_EXTENSIONS = ['.txt', '.py', '.pdf', '.png', '.jpg']
 
 
 def send_data(client, status, data):
@@ -33,33 +35,41 @@ def get_solution(client, data):
     if not os.path.isfile(fileName):
         send_data(client, FILE_NOT_FOUND, {"Error": "NO SOLUTION FOUND"})
         return
+
     with open(fileName, 'rb') as file:
         fileSize = file.__sizeof__()
-        chunks = fileSize // BYTE_READ + bool(fileSize % BYTE_READ)
-        send_data(client, OK, {"file_name": data["payload"], "chunks": chunks, "byte_read": BYTE_READ})
+        chunks = fileSize // CHUNK_SIZE + bool(fileSize % CHUNK_SIZE)
+        send_data(client, OK, {"file_name": data["payload"], "chunks": chunks, "chunk_size": CHUNK_SIZE})
         for _ in range(chunks):
-            chunk = file.read(BYTE_READ)
+            chunk = file.read(CHUNK_SIZE)
             client.send(chunk)
             time.sleep(0.001)
     client.close()
 
 
 def send_solution(client, data):
-    client.send(b'ready')
     fileName = data['payload']['file_name']
     chunks = data['payload']['chunks']
-    byteReadSize = data['payload']['byte_read']
+    byteReadSize = data['payload']['chunk_size']
 
     fileName = os.path.join('.', 'data', os.path.split(fileName)[-1])
+    print(fileName)
     name, ext = os.path.splitext(fileName)
+
     if not ext in NORMAL_FILE_EXTENSIONS:
         send_data(client, ABNORMAL_FILE_EXTENSION, {'Error': "FILE EXTENSION IS NOT VALID"})
         return
+    if chunks > 25:
+        send_data(client, ABNORMAL_FILE_SIZE, {'Error': "FILE SIZE TOO MUCH"})
+        return
+
     count = 1
     while os.path.exists(name + str(count) + ext):
         count += 1
+
     fileName = name + str(count) + ext
     with open(fileName, 'wb') as file:
+        send_data(client, OK, {'file_name': fileName})
         for _ in range(chunks):
             chunk = client.recv(byteReadSize)
             file.write(chunk)
@@ -67,12 +77,17 @@ def send_solution(client, data):
 
 
 def get_filenames(client, data):
-    fileName = os.path.join('.', 'data')
-    fileNames = []
-    for _, a, files in os.walk(fileName):
-        fileNames = files
+    dirName = os.path.join('.', 'data')
+    extension = data['payload']
+    allFiles = []
+
+    for _, a, files in os.walk(dirName):
+        allFiles = files
+
+    allFiles = list(filter(lambda filename: os.path.splitext(filename)[-1] == extension or extension == '*', allFiles))
+    print(allFiles)
     response = {
-        'files': fileNames
+        'files': allFiles
     }
     send_data(client, OK, response)
     client.close()
