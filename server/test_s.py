@@ -53,7 +53,6 @@ def send_solution(client, data):
     byteReadSize = data['payload']['chunk_size']
 
     fileName = os.path.join('.', 'data', os.path.split(fileName)[-1])
-    print(fileName)
     name, ext = os.path.splitext(fileName)
 
     if ext not in NORMAL_FILE_EXTENSIONS:
@@ -85,7 +84,6 @@ def get_filenames(client, data):
         allFiles = files
 
     allFiles = list(filter(lambda filename: os.path.splitext(filename)[-1] == extension or extension == '*', allFiles))
-    print(allFiles)
     response = {
         'files': allFiles
     }
@@ -117,10 +115,8 @@ def clean_threads_coroutine():
     while True:
         if len(THREADS) > 0:
             index %= len(THREADS)
-            print(THREADS[index].is_alive())
             if not THREADS[index].is_alive():
                 THREADS.pop(index)
-                print(len(THREADS), 'количество')
             index += 1
         yield
 
@@ -171,13 +167,14 @@ class TcpListener(threading.Thread):
                 client, addr = self.serv_sock.accept()
             except socket.timeout:
                 continue
+            print('[i] Connected to server {}:{}'.format(*addr))
 
             try:
                 time.sleep(0.001)
                 data = json.loads(client.recv(1024))
                 self.tasks_query.send((client, data))
             except (json.decoder.JSONDecodeError, ConnectionResetError):
-                print('Someone closed connection')
+                pass
         self.serv_sock.close()
 
     def stop(self):

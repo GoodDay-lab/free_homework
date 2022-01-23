@@ -2,26 +2,30 @@ import os.path
 import socket
 import json
 import sys
+import math
 
 
-SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 5555
+SERVER_HOST = '2.tcp.ngrok.io'
+SERVER_PORT = 15928
 SERVER_ADDRESS = (SERVER_HOST, SERVER_PORT)
 OK = 200
 CHUNK_SIZE = 2048
 RESPONSE_SIZE = 1024
+logging = True
 
 
 def get_chunks(file_obj):
-    return file_obj.__sizeof__() // 2048 + bool(file_obj.__sizeof__() % 2048)
+    return math.ceil(file_obj.__sizeof__() / CHUNK_SIZE)
 
 
 def parse_response(response):
     if response["status"] == OK:
-        sys.stdout.write('STATUS: {}\r\nDATA: {}\r\n'.format(response['status'], response['data']))
+        if logging:
+            sys.stdout.write('STATUS: {}\r\nDATA: {}\r\n'.format(response['status'], response['data']))
         return response["data"]
     else:
-        sys.stderr.write('STATUS: {}\r\nEXCEPTION: {}\r\n'.format(response['status'], response['data']['Error']))
+        if logging:
+            sys.stderr.write('STATUS: {}\r\nEXCEPTION: {}\r\n'.format(response['status'], response['data']['Error']))
         raise RuntimeError
 
 
@@ -93,6 +97,6 @@ def get_filenames(extension="*"):
 
 
 while True:
-    get_filenames()
-    get_solution('python.jpg')
+    files = get_filenames()
+    get_solution(files[0])
     break
