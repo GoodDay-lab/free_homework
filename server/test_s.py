@@ -11,12 +11,12 @@ THREADS = [] * 10
 BYTE_READ = 2048
 
 # STATUSES
-FILE_NOT_FOUND = 401
 OK = 200
+FILE_NOT_FOUND = 401
 ABNORMAL_FILE_EXTENSION = 402
 
 # EXTENSIONS
-NORMAL_FILE_EXTENSIONS = ['.txt', '.py']
+NORMAL_FILE_EXTENSIONS = ['.txt', '.py', '.pdf']
 
 
 def send_data(client, status, data):
