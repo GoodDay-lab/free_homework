@@ -11,7 +11,9 @@ OK = 200
 CHUNK_SIZE = 2048
 RESPONSE_SIZE = 1024
 
-get_chunks = lambda file_obj: file_obj.__sizeof__() // 2048 + bool(file_obj.__sizeof__() % 2048)
+
+def get_chunks(file_obj):
+    return file_obj.__sizeof__() // 2048 + bool(file_obj.__sizeof__() % 2048)
 
 
 def parse_response(response):
