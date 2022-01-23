@@ -166,7 +166,7 @@ class TcpListener(threading.Thread):
             try:
                 client, addr = self.serv_sock.accept()
             except socket.timeout:
-                continue:
+                continue
             print('[i] Connected to server {}:{}'.format(*addr))
 
             try:
