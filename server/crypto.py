@@ -10,7 +10,7 @@ def encode_(buffer: bytes, encode_key):
     result = bytes()
     for i, elem in enumerate(buffer):
         result += get_byte((elem + key) + 256 * (((elem + key) < 0) - ((elem + key) > 255)))
-    return result
+    return buffer
 
 
 def decode_(buffer: bytes, encode_key):
@@ -18,7 +18,7 @@ def decode_(buffer: bytes, encode_key):
     result = bytes()
     for i, elem in enumerate(buffer):
         result += get_byte((elem - key) + 256 * (((elem - key) < 0) - ((elem - key) > 255)))
-    return result
+    return buffer
 
 
 def get_byte(number):

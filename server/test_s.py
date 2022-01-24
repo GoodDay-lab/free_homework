@@ -1,4 +1,5 @@
 import json
+import math
 import random
 import socket
 import threading
@@ -17,6 +18,7 @@ QUERY = []
 THREADS = [] * 10
 
 CHUNK_SIZE = 2048
+CHUNKS_LIMIT = 1024 * 7.5
 
 MAIN_THREAD = threading.main_thread()
 
@@ -55,8 +57,7 @@ def get_solution(client, data):
         return
 
     with open(fileName, 'rb') as file:
-        fileSize = file.__sizeof__()
-        chunks = fileSize // CHUNK_SIZE + bool(fileSize % CHUNK_SIZE)
+        chunks = math.ceil(os.path.getsize(fileName) / CHUNK_SIZE)
         secure_key = create_secure_key()
         send_data(client, OK, {"file_name": data["payload"], "chunks": chunks,
                                "chunk_size": CHUNK_SIZE, "secure_key": secure_key})
@@ -79,7 +80,7 @@ def send_solution(client, data):
     if ext not in NORMAL_FILE_EXTENSIONS:
         send_data(client, ABNORMAL_FILE_EXTENSION, {'Error': "FILE EXTENSION IS NOT VALID"})
         return
-    if chunks > 25:
+    if chunks > CHUNKS_LIMIT:
         send_data(client, ABNORMAL_FILE_SIZE, {'Error': "FILE SIZE TOO MUCH"})
         return
 
@@ -106,6 +107,7 @@ def get_filenames(client, data):
         allFiles = files
 
     allFiles = list(filter(lambda filename: os.path.splitext(filename)[-1] == extension or extension == '*', allFiles))
+    allFiles = list(map(lambda filename: (filename, os.path.getsize('./data/' + filename)), allFiles))
     response = {
         'files': allFiles
     }

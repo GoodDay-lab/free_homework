@@ -5,18 +5,21 @@ import sys
 import math
 from crypto import encode, decode, create_secure_key
 
-SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 5555
+with open('settings.json') as file:
+    data = json.load(file)
+    SERVER_HOST = data['HOST']
+    SERVER_PORT = data['PORT']
+    AUTH_KEY = data['AUTH_KEY']
+
 SERVER_ADDRESS = (SERVER_HOST, SERVER_PORT)
 OK = 200
 CHUNK_SIZE = 2048
 RESPONSE_SIZE = 1024
-AUTH_KEY = 'Jinja'
 logging = True
 
 
-def get_chunks(file_obj):
-    return math.ceil(file_obj.__sizeof__() / CHUNK_SIZE)
+def get_chunks(file):
+    return math.ceil(os.path.getsize(file) / CHUNK_SIZE)
 
 
 def parse_response(response):
@@ -37,7 +40,8 @@ def send_solution(fileName):
     if not os.path.exists(fileName):
         return False
     with open(fileName, 'rb') as file:
-        chunks = get_chunks(file)
+        chunks = get_chunks(fileName)
+        print(chunks)
         secure_key = create_secure_key()
         request = {
             "auth_key": AUTH_KEY,
@@ -112,8 +116,3 @@ def terminate_server(password):
         'payload': password
     }
     sock.send(json.dumps(request).encode())
-
-
-while True:
-    send_solution('crypto.py')
-    break
