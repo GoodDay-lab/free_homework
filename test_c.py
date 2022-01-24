@@ -4,7 +4,6 @@ import json
 import sys
 import math
 
-
 SERVER_HOST = '2.tcp.ngrok.io'
 SERVER_PORT = 15928
 SERVER_ADDRESS = (SERVER_HOST, SERVER_PORT)

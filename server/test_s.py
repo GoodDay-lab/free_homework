@@ -130,17 +130,16 @@ def main(host, tcp_port):
 
     is_running = True
     while is_running:
-        cmd = input('admin@admin $ ')
-        if cmd == 'quit':
-            print('wait', end='')
+        try:
+            cmd = input('admin@admin $ ')
+        except KeyboardInterrupt:
             tcp_listener.stop()
-            print('.', end='')
-            time.sleep(0.2)
             is_running = False
-            print('.', end='')
-            time.sleep(0.2)
+            continue
+        if cmd == 'quit':
+            tcp_listener.stop()
+            is_running = False
     tcp_listener.join()
-    print('.', end='')
 
 
 class TcpListener(threading.Thread):
