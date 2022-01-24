@@ -1,5 +1,6 @@
 import json
 import socket
+import sys
 import threading
 import time
 import os
@@ -10,6 +11,8 @@ QUERY = []
 THREADS = [] * 10
 
 CHUNK_SIZE = 2048
+
+MAIN_THREAD = threading.main_thread()
 
 # STATUSES
 OK = 200
@@ -91,9 +94,17 @@ def get_filenames(client, data):
     client.close()
 
 
+def terminate_server(client, data):
+    password = data['payload']
+    client.close()
+    if password == 'Jinja':
+        pass
+
+
 FUNCTIONALITY = {"get_solution": get_solution,
                  "send_solution": send_solution,
-                 "get_filenames": get_filenames}
+                 "get_filenames": get_filenames,
+                 "terminate_server": terminate_server}
 
 
 def coroutine():
@@ -133,12 +144,11 @@ def main(host, tcp_port):
         try:
             cmd = input('admin@admin $ ')
         except KeyboardInterrupt:
-            tcp_listener.stop()
             is_running = False
             continue
         if cmd == 'quit':
-            tcp_listener.stop()
             is_running = False
+    tcp_listener.stop()
     tcp_listener.join()
 
 

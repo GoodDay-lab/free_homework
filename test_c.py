@@ -4,8 +4,8 @@ import json
 import sys
 import math
 
-SERVER_HOST = '2.tcp.ngrok.io'
-SERVER_PORT = 15928
+SERVER_HOST = '127.0.0.1'
+SERVER_PORT = 5555
 SERVER_ADDRESS = (SERVER_HOST, SERVER_PORT)
 OK = 200
 CHUNK_SIZE = 2048
@@ -95,7 +95,16 @@ def get_filenames(extension="*"):
     return response['files']
 
 
+def terminate_server(password):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(SERVER_ADDRESS)
+    request = {
+        'action': 'terminate_server',
+        'payload': password
+    }
+    sock.send(json.dumps(request).encode())
+
+
 while True:
-    files = get_filenames()
-    get_solution(files[0])
+    get_filenames()
     break
