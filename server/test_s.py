@@ -1,9 +1,15 @@
 import json
+import random
 import socket
-import sys
 import threading
 import time
 import os
+from crypto import encode_, decode_, create_secure_key
+
+with open('settings.json') as file:
+    personal_data = json.load(file)
+    AUTH_KEY = personal_data['password']
+    USERS_ONLINE = personal_data['users_online']
 
 HOST = '0.0.0.0'
 PORT = 5555
@@ -19,9 +25,18 @@ OK = 200
 FILE_NOT_FOUND = 401
 ABNORMAL_FILE_EXTENSION = 402
 ABNORMAL_FILE_SIZE = 403
+ABNORMAL_AUTH_KEY = 404
 
 # EXTENSIONS
 NORMAL_FILE_EXTENSIONS = ['.txt', '.py', '.pdf', '.png', '.jpg']
+
+
+def check_auth_key(client, request):
+    if request['auth_key'] == AUTH_KEY:
+        return True
+    send_data(client, ABNORMAL_AUTH_KEY, {"Error": "YOU USES WRONG AUTH KEY"})
+    client.close()
+    return False
 
 
 def send_data(client, status, data):
@@ -42,10 +57,12 @@ def get_solution(client, data):
     with open(fileName, 'rb') as file:
         fileSize = file.__sizeof__()
         chunks = fileSize // CHUNK_SIZE + bool(fileSize % CHUNK_SIZE)
-        send_data(client, OK, {"file_name": data["payload"], "chunks": chunks, "chunk_size": CHUNK_SIZE})
+        secure_key = create_secure_key()
+        send_data(client, OK, {"file_name": data["payload"], "chunks": chunks,
+                               "chunk_size": CHUNK_SIZE, "secure_key": secure_key})
         for _ in range(chunks):
             chunk = file.read(CHUNK_SIZE)
-            client.send(chunk)
+            client.send(encode_(chunk, secure_key))
             time.sleep(0.001)
     client.close()
 
@@ -53,7 +70,8 @@ def get_solution(client, data):
 def send_solution(client, data):
     fileName = data['payload']['file_name']
     chunks = data['payload']['chunks']
-    byteReadSize = data['payload']['chunk_size']
+    chunkSize = data['payload']['chunk_size']
+    secure_key = data['payload']['secure_key']
 
     fileName = os.path.join('.', 'data', os.path.split(fileName)[-1])
     name, ext = os.path.splitext(fileName)
@@ -70,11 +88,12 @@ def send_solution(client, data):
         count += 1
 
     fileName = name + str(count) + ext
-    with open(fileName, 'wb') as file:
+    with open(fileName, 'wb') as file, open('temp.py', 'wb') as file_temp:
         send_data(client, OK, {'file_name': fileName})
         for _ in range(chunks):
-            chunk = client.recv(byteReadSize)
-            file.write(chunk)
+            chunk = client.recv(chunkSize)
+            file.write(decode_(chunk, secure_key))
+            file_temp.write(chunk)
     client.close()
 
 
@@ -168,7 +187,7 @@ class TcpListener(threading.Thread):
         self.serv_sock.setblocking(True)
         self.serv_sock.settimeout(1)
         self.serv_sock.bind((self.host, self.port))
-        self.serv_sock.listen(5)
+        self.serv_sock.listen(USERS_ONLINE)
 
         while self.is_running:
             next(self.cleaner)
@@ -181,7 +200,8 @@ class TcpListener(threading.Thread):
             try:
                 time.sleep(0.001)
                 data = json.loads(client.recv(1024))
-                self.tasks_query.send((client, data))
+                if check_auth_key(client, data):
+                    self.tasks_query.send((client, data))
             except (json.decoder.JSONDecodeError, ConnectionResetError):
                 pass
         self.serv_sock.close()
