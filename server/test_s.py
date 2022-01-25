@@ -7,7 +7,7 @@ import time
 import os
 from crypto import encode_, decode_, create_secure_key
 
-with open('settings.json') as file:
+with open('./settings.json') as file:
     personal_data = json.load(file)
     AUTH_KEY = personal_data['password']
     USERS_ONLINE = personal_data['users_online']
