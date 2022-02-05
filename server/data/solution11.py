@@ -1,24 +1,23 @@
-import json
 import sys
+import os.path
 
 
-file = json.load(open("scoring.json"))
+def human_read_format(size: int):
+    format_l = ['Б', 'КБ', 'МБ', 'ГБ']
+    indicator = len(format_l)
+    while indicator >= 0:
+        if bool(indicator) * 1024 ** indicator <= size:
+            break
+        indicator -= 1
+    return str(round(size / 1024 ** indicator)) + format_l[indicator]
 
 
-def walk(file):
-    tests = file["scoring"]
-    index = 0
-    while index < len(tests):
-        test = tests[index]
-        num = len(test["required_tests"])
-        point = test["points"] // num
-        for _ in range(num):
-            yield point
-        index += 1
-
-        
-with sys.stdin as std:
-    allPoints = 0
-    for point in walk(file):
-        allPoints += point * (std.readline().strip() == 'ok')
-    print(allPoints)
+def get_files_sizes():
+    for path, _, files in os.walk():
+        print(path, '----------------------')
+        for file in files:
+            print(file, end=' ')
+            print(human_read_format(os.path.getsize(os.path.join(path, file))))
+    
+    
+get_files_sizes()
